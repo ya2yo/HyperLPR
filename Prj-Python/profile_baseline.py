@@ -4,6 +4,7 @@ import sys
 import cv2
 import numpy as np
 import onnxruntime as ort
+import psutil
 import hyperlpr3 as lpr3
 from hyperlpr3.config.settings import onnx_runtime_config as ort_cfg, _DEFAULT_FOLDER_
 from hyperlpr3.inference.multitask_detect import MultiTaskDetectorORT
@@ -51,6 +52,13 @@ def profile_stages(image_path: str, rounds: int = 20):
     cls_times = []
     patch_sizes = []
 
+    # 系统资源采集（RSS 峰值 + 进程 CPU 占用率）
+    proc = psutil.Process()
+    cpu_count = psutil.cpu_count() or 1
+    rss_peak = proc.memory_info().rss
+    cpu_t0 = time.process_time()
+    wall_t0 = time.perf_counter()
+
     for _ in range(rounds):
         # 1. Detector
         t0 = time.perf_counter()
@@ -92,6 +100,9 @@ def profile_stages(image_path: str, rounds: int = 20):
             cls_out = cls(pad)
             t7 = time.perf_counter()
             cls_times.append((t7 - t6) * 1000)
+            rss_now = proc.memory_info().rss
+            if rss_now > rss_peak:
+                rss_peak = rss_now
 
     avg_det = np.mean(det_times)
     std_det = np.std(det_times)
@@ -118,6 +129,15 @@ def profile_stages(image_path: str, rounds: int = 20):
     print(f"车牌矫正切片大小:         {avg_patch_size / 1024:7.2f} KB  (P2 端云协同需上传)")
     reduction = (1 - avg_patch_size / raw_size_bytes) * 100
     print(f"P2 切分点网络载荷削减率:    {reduction:7.2f} % (数据量缩减超 {raw_size_bytes/avg_patch_size:.0f} 倍!)")
+    cpu_t1 = time.process_time()
+    wall_t1 = time.perf_counter()
+    cpu_util = (cpu_t1 - cpu_t0) / (wall_t1 - wall_t0) * 100.0 / cpu_count
+    rss_peak_mb = rss_peak / (1024 * 1024)
+
+    print("\n【系统资源占用 (Resource Usage)】")
+    print(f"峰值常驻内存 (RSS):        {rss_peak_mb:7.1f} MB")
+    print(f"进程 CPU 占用率:           {cpu_util:7.1f} % (占 {cpu_count} 核总 CPU)")
+
     print("=" * 65)
 
 if __name__ == "__main__":

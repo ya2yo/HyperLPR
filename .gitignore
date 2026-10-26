@@ -28,4 +28,5 @@ venv/
 *.pyc
 *~
 *.swp
+.venv/
 
