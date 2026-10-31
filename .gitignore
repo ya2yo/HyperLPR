@@ -28,4 +28,9 @@ venv/
 *.pyc
 *~
 *.swp
+.venv/
+
+# Typst 编译产物：保留 .typ 源码即可重新生成，不必入库
+doc/*.pdf
+doc/*.png
 

@@ -1,0 +1,30 @@
+===== 端侧设备信息 =====
+机型: 360OS QSN2201
+硬件/板: ud710_7h10 / ud710_7h10
+主 ABI: arm64-v8a
+Android API: 29
+可用 CPU 核心: 8
+系统内存: 可用 2342 MB / 共 5727 MB
+
+===== 端侧基线（四阶段合计）=====
+口径: plateRecognition() 单次墙钟耗时, 每张图 1 次 warmup + 20 轮统计
+图片             分辨率             轮次     均值ms     中位ms     最小ms     最大ms  识别结果
+1.jpg          320x320         20   203.79   203.76   202.60   205.73  未识别到车牌
+a.jpg          320x48          20   135.18   135.23   134.16   136.13  粤ZP560港[黑牌港澳]
+align.jpg      337x111         20    66.51    66.45    66.06    67.28  未识别到车牌
+pad.jpg        320x48          20    66.13    66.18    65.47    66.84  未识别到车牌
+pre.jpg        320x320         20   135.45   135.44   134.76   136.24  未识别到车牌
+test_img.jpg   1920x1080       20   149.98   149.93   148.70   151.72  苏ED51712[绿牌新能源]
+
+----- 汇总 -----
+参与统计的图片数: 6
+各图均值再平均: 126.17 ms
+进程 PSS(测试后采样): 95228 KB (93.0 MB)
+说明: 单张耗时 = Detect + Align + Rec + Cls 四阶段总耗时; 不含图片解码与界面绘制。
+
+===== 采集方式 =====
+应用: Prj-Android 的 BenchActivity（applicationId com.hyperai.example.lpr3_bench）
+      —— 测试图内置于 assets/plates，无需存储权限、无需 USB 调试
+引擎: HyperLPR3 Android SDK 1.0.3 + MNN（assets/r2_mobile/*.mnn）
+计时: System.nanoTime() 包裹 plateRecognition()，每张图 1 次 warmup + 20 轮
+日期: 2026-10-31
