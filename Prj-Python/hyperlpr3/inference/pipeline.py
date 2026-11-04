@@ -24,37 +24,10 @@ class LPRMultiTaskPipeline(object):
             layer_num = int(out[13])
             # print(layer_num)
             pad = get_rotate_crop_image(image, land_marks)
-            if layer_num == DOUBLE:
-                # double
-                h, w, _ = pad.shape
-                line = int(h * 0.4)
-                top = pad[:line, :, ]
-                bottom = pad[line:, :]
-                top_code, top_confidence = self.recognizer(top)
-                bottom_code, bottom_confidence = self.recognizer(bottom)
-                plate_code = top_code + bottom_code
-                rec_confidence = (top_confidence + bottom_confidence) / 2
-                # cv2.imshow("top", top)
-                # cv2.imshow("bottom", bottom)
-                # cv2.waitKey(0)
-            else:
-                plate_code, rec_confidence = self.recognizer(pad)
+            plate_code, rec_confidence, plate_type = self.recognizePatch(pad, layer_num)
             if plate_code == '':
                 continue
             if len(plate_code) >= 7:
-                plate_type = code_filter(plate_code)
-                if plate_type == UNKNOWN:
-                    cls = self.classifier(pad)
-                    idx = int(np.argmax(cls))
-                    if idx == PLATE_TYPE_YELLOW:
-                        if layer_num == DOUBLE:
-                            plate_type = YELLOW_DOUBLE
-                        else:
-                            plate_type = YELLOW_SINGLE
-                    elif idx == PLATE_TYPE_BLUE:
-                        plate_type = BLUE
-                    elif idx == PLATE_TYPE_GREEN:
-                        plate_type = GREEN
                 plate = Plate(vertex=land_marks, plate_code=plate_code, det_bound_box=np.asarray(rect),
                               rec_confidence=rec_confidence, dex_bound_confidence=score, plate_type=plate_type)
                 if self.full_result:
@@ -63,6 +36,32 @@ class LPRMultiTaskPipeline(object):
                     result.append(plate.to_result())
 
         return result
+
+    def recognizePatch(self, image: np.ndarray, layerNum: int = MONO) -> tuple:
+        assert image is not None, "Input image cannot be empty."
+        assert len(image.shape) == 3, "Input image must be 3 channels."
+        if layerNum not in (MONO, DOUBLE):
+            raise ValueError("layerNum must be MONO or DOUBLE.")
+
+        if layerNum == DOUBLE:
+            line = int(image.shape[0] * 0.4)
+            topCode, topConf = self.recognizer(image[:line, :])
+            bottomCode, bottomConf = self.recognizer(image[line:, :])
+            plateCode = topCode + bottomCode
+            recConf = (topConf + bottomConf) / 2
+        else:
+            plateCode, recConf = self.recognizer(image)
+
+        plateType = code_filter(plateCode) if len(plateCode) >= 2 else UNKNOWN
+        if plateType == UNKNOWN:
+            clsIdx = int(np.argmax(self.classifier(image)))
+            if clsIdx == PLATE_TYPE_YELLOW:
+                plateType = YELLOW_DOUBLE if layerNum == DOUBLE else YELLOW_SINGLE
+            elif clsIdx == PLATE_TYPE_BLUE:
+                plateType = BLUE
+            elif clsIdx == PLATE_TYPE_GREEN:
+                plateType = GREEN
+        return plateCode, float(recConf), plateType
 
     def __call__(self, image: np.ndarray, *args, **kwargs):
         return self.run(image)

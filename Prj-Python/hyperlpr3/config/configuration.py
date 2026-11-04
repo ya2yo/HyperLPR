@@ -36,9 +36,8 @@ def down_model_zip(url, save_path, is_unzip=False):
             bar.update(size)
 
     if is_unzip:
-        f = zipfile.ZipFile(name, "r")
-        for file in f.namelist():
-            f.extract(file, save_path)
+        with zipfile.ZipFile(name, "r") as archive:
+            archive.extractall(save_path)
         os.remove(name)
 
 

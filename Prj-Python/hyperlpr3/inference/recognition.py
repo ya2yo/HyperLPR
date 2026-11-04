@@ -112,7 +112,8 @@ class PPRCNNRecognitionORT(HamburgerABC):
     def __init__(self, onnx_path, token_dict=token, *args, **kwargs):
         import onnxruntime as ort
         super().__init__(*args, **kwargs)
-        self.session = ort.InferenceSession(onnx_path, None)
+        from .ort_session import session
+        self.session = session(onnx_path)
         self.input_config = self.session.get_inputs()[0]
         self.output_config = self.session.get_outputs()[0]
         self.input_size = self.input_config.shape[2:]
