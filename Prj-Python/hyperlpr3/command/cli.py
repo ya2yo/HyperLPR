@@ -1,7 +1,7 @@
 import click
 from hyperlpr3.command.aliased_group import AliasedGroup
 from hyperlpr3.command.sample import sample
-from hyperlpr3.command.serve import rest
+from hyperlpr3.command.cloud_api import rest
 
 __all__ = ['cli']
 

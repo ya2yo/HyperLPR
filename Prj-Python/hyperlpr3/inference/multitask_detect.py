@@ -156,7 +156,8 @@ class MultiTaskDetectorORT(HamburgerABC):
         import onnxruntime as ort
         self.box_threshold = box_threshold
         self.nms_threshold = nms_threshold
-        self.session = ort.InferenceSession(onnx_path, providers=['CPUExecutionProvider'])
+        from .ort_session import session
+        self.session = session(onnx_path, ['CPUExecutionProvider'])
         self.inputs_option = self.session.get_inputs()
         self.outputs_option = self.session.get_outputs()
         input_option = self.inputs_option[0]

@@ -6,8 +6,6 @@ from .config.settings import _DEFAULT_FOLDER_
 from .config.configuration import initialization
 
 
-initialization()
-
 class LicensePlateCatcher(object):
 
     def __init__(self,
@@ -16,6 +14,7 @@ class LicensePlateCatcher(object):
                  detect_level: int = DETECT_LEVEL_LOW,
                  logger_level: int = 3,
                  full_result: bool = False):
+        initialization()
         if inference == INFER_ONNX_RUNTIME:
             from hyperlpr3.inference.multitask_detect import MultiTaskDetectorORT
             from hyperlpr3.inference.recognition import PPRCNNRecognitionORT
